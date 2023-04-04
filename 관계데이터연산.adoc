@@ -1,0 +1,80 @@
+= 관계데이터 연산
+:stem:
+
+== Example: 대학 관계형 데이터베이스
+
+image::대학관계형데이터베이스.png[]
+
+== 관계대수식의 검색문
+1. 학과가 ‘컴퓨터’이고, 학년이 3학년인 학생의 학번과 이름을 검색하세요.
+ * latexmath:[\prod_{학번,이름} (\sigma_{학과='컴퓨터' \wedge 학년=3}(학생))]
+2. 학수번호가 ‘C413’인 과목을 등록하여, 성적 ‘A’를 받은 학생의 이름을 검색하세요.
+ * latexmath:[\prod_{이름} (\sigma_{학수번호='C413' \wedge 성적='A'} (학생 \Join_N 등록 \Join_N 과목)]
+3. ‘Database’ 과목을 등록한 학생의 이름을 검색하세요.
+ * latexmath:[\prod_{이름} (\sigma_{과목명='Database'} (학생 \Join_N 등록 \Join_N 과목)]
+4. ‘Database’ 과목을 등록하여, 성적 ‘A’를 받은 학생의 이름을 검색하세요.
+ * latexmath:[\prod_{이름} (\sigma_{과목명='Database' \wedge 성적='A'} (학생 \Join_N 등록 \Join_N 과목)]
+5. ‘Database’와 ‘화일처리’ 과목을 같이 수강한 학생의 학번을 검색하세요.
+ * latexmath:[\rho_X (등록 \Join_N 과목))]
+ * latexmath:[\prod_{학번} (\sigma_{과목명='Database'} (X)) \cap \prod_{학번} (\sigma_{과목명='화일처리'} (X))]
+6. ‘컴퓨터’ 학과의 3학년 학생들 중에 ‘Database’와 ‘화일처리’을 같이 수강한 학생의 학번을 검색하세요.
+ * latexmath:[\rho_X (\sigma_{학과='컴퓨터' \wedge 학년=3}(학생) \Join_N 등록 \Join_N 과목))]
+ * latexmath:[\prod_{학번} (\sigma_{과목명='Database'} (X)) \cap \prod_{학번} (\sigma_{과목명='화일처리'} (X))]
+7. 학수번호가 ‘C413’인 과목을 등록하지 않은 학생의 이름을 검색하세요.
+ * latexmath:[\prod_{이름}(학생 \Join_N (\prod_{학번}(학생) - \prod_{학번} (\sigma_{학수번호='C413'} (학생 \Join_N 등록)))]
+8. ‘Database’ 과목의 기말시험 평균은?
+ * latexmath:[AVG_{기말시험} (\sigma_{과목명='Database'} (과목 \Join_N 등록)]
+9. 각 학생의 학번과 기말시험 평균을 구하세요. 단 휴학생(수강 등록을 하지 않은 학생)도 포함하세요.
+ * latexmath:[AVG_{기말시험} (GROUP_{학번} (학생 \Join_L^{+} 등록))]
+
+
+
+== 학생 테이블
++
+----
+W:\kb\sqlite\example>w:\tools\sqlite3.exe
+SQLite version 3.41.2 2023-03-22 11:56:21
+Enter ".help" for usage hints.
+Connected to a transient in-memory database.
+Use ".open FILENAME" to reopen on a persistent database.
+sqlite> .open test.db
+sqlite> create table "학생" (학번 INTEGER PRIMARY KEY, 이름 TEXT, 학년 INTEGER, 학과 TEXT);
+sqlite> insert into "학생" (학번, 이름, 학년, 학과) values (100, '나연묵', 4, '컴퓨터');
+sqlite> insert into "학생" (학번, 이름, 학년, 학과) values (200, '이찬영', 3, '전기');
+sqlite> insert into "학생" (학번, 이름, 학년, 학과) values (300, '정기태', 1, '컴퓨터');
+sqlite> insert into "학생" (학번, 이름, 학년, 학과) values (400, '송병호', 4, '컴퓨터');
+sqlite> insert into "학생" (학번, 이름, 학년, 학과) values (500, '박종화', 2, '산업공학');
+sqlite> select * from "학생";
+100|나연묵|4|컴퓨터
+200|이찬영|3|전기
+300|정기태|1|컴퓨터
+400|송병호|4|컴퓨터
+500|박종화|2|산업공학
+----
+
+
+== 등록 테이블
++
+----
+W:\kb\sqlite\example>w:\tools\sqlite3.exe
+SQLite version 3.41.2 2023-03-22 11:56:21
+Enter ".help" for usage hints.
+Connected to a transient in-memory database.
+Use ".open FILENAME" to reopen on a persistent database.
+sqlite> .open test.db
+sqlite> create table "등록" (학번 INTEGER, 학수번호 TEXT,  성적 TEXT, 중간시험 INTEGER, 기말시험 INTEGER, PRIMARY KEY(학번, 학수번호));
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (100, 'C413', 'A', 90, 95);
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (100, 'E412', 'A', 95, 95);
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (200, 'C123', 'B', 95, 95);
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (200, 'C413', 'B', 100, 100);
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (200, 'Xxxx', NULL, NULL, NULL);
+sqlite> insert into "등록" (학번, 학수번호, 성적, 중간시험, 기말시험) values (300, 'XXXX', NULL, NULL, NULL);
+sqlite> select * from "등록";
+100|C413|A|90|95
+100|E412|A|95|95
+200|C123|B|95|95
+200|C413|B|100|100
+200|Xxxx|||
+300|XXXX|||
+----
+
